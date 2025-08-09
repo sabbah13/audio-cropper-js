@@ -1,44 +1,44 @@
-# Audio Cropper (Vanilla JS)
+# Audio Cropper
 
-Minimal in-browser audio clipper: upload, select clips visually, play/pause/stop, and export each clip as MP3 or all clips as a ZIP. Built with Canvas + Web Audio API.
+Minimal, fast, and private in‑browser audio clipper. Upload any audio, mark clips on the waveform, preview them, and download as MP3 (individually or all-at-once as a ZIP).
+
+👉 Live: https://audio-cropper.netlify.app
 
 ![Preview of Audio Cropper](assets/preview.png)
 
 ## Features
-- Create, move, and resize clips by dragging over the waveform
-- Global and per-clip play/pause with accurate playhead
-- Single-click seek on waveform and inside clips
-- Export individual clips to MP3 (preserves channels up to stereo; bitrate approximates source)
-- Download all clips as ZIP (MP3s)
+- Create, move, and resize clips directly on the waveform
+- Global Play/Pause and per-clip Play/Pause, with an accurate playhead
+- Single‑click seek anywhere on the waveform or inside a clip
+- Export each clip to MP3 (preserves channels up to stereo, sensible bitrate)
+- Download all clips at once as a ZIP archive
+- Runs entirely in your browser (no uploads, no accounts, no tracking)
 
-## Production build
-This project uses Tailwind via a prebuilt CSS file.
+## How to use
+1. Click “Choose File” and pick an audio file.
+2. Drag across the waveform to create a clip.
+3. Drag inside a clip to move it, or drag its edges to resize.
+4. Use Play/Pause/Stop globally or per clip; the playhead shows the current position.
+5. Click “Download” on any clip to export it as MP3, or “Download All” to get a ZIP of all clips.
 
-Install deps and build CSS:
+## Run locally
+This repo ships with a prebuilt Tailwind CSS file. You only need a static server.
 
 ```bash
-npm ci || npm install
-npm run build:css
+git clone https://github.com/sabbah13/audio-cropper-js.git
+cd audio-cropper-js
+npm install
+npm run build:css   # builds styles.css (optional if already present)
+npx http-server .   # or any static server; open http://localhost:8080
 ```
 
-Serve locally:
-
-```bash
-npx http-server .
-```
-
-## Deploy to Netlify
-```bash
-npx netlify-cli login            # once
-npx netlify-cli init             # create/link a site
-npx netlify-cli deploy --prod    # deploy
-```
-
-## Security
-- CSP locks scripts/styles to self; dynamic libraries are loaded from local `vendor/` first, falling back to pinned CDNs.
-- No cookies; no user data leaves the browser.
+## Contributing
+Issues and pull requests are welcome!
+- Keep code clear and readable.
+- Avoid heavy dependencies; this app is purposely lightweight.
+- Test playback controls, clip editing, and downloads across Chrome/Firefox/Safari.
 
 ## License
-MIT
+MIT — see `LICENSE` for details.
 
 
