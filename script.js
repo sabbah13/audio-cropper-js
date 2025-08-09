@@ -25,6 +25,8 @@
 	  playSessionId: 0, // increments each time we start playback to ignore stale events
 	  originalFile: null, // currently loaded File
 	  inputFormat: { channels: null, sampleRate: null, bitrateKbps: null },
+	  isEmbed: (window.top !== window.self),
+	  embedHost: document.referrer || '',
 	};
   
 	// Utility: time & px conversions
@@ -625,11 +627,13 @@
       await loadExternalScript('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js');
     };
 
-    const ensureMusicMetadata = async () => {
-      if (window.musicMetadata && typeof window.musicMetadata.parseBlob === 'function') return;
-      try { await loadExternalScript('./vendor/music-metadata-browser.min.js'); return; } catch {}
-      await loadExternalScript('https://cdn.jsdelivr.net/npm/music-metadata-browser@2.5.10/dist/music-metadata-browser.min.js');
-    };
+	const ensureMusicMetadata = async () => {
+	  // Skip in restricted iframes (e.g., Notion) to avoid noisy console errors
+	  if (state.isEmbed && /notion\.so/.test(state.embedHost)) return;
+	  if (window.musicMetadata && typeof window.musicMetadata.parseBlob === 'function') return;
+	  try { await loadExternalScript('./vendor/music-metadata-browser.min.js'); return; } catch {}
+	  await loadExternalScript('https://cdn.jsdelivr.net/npm/music-metadata-browser@2.5.10/dist/music-metadata-browser.min.js');
+	};
 
     const ensureJSZip = async () => {
       if (window.JSZip) return;
@@ -721,13 +725,47 @@
 
 	const downloadBlob = (blob, filename) => {
 	  const url = URL.createObjectURL(blob);
-	  const a = document.createElement('a');
-	  a.href = url;
-	  a.download = filename;
-	  document.body.appendChild(a);
-	  a.click();
-	  a.remove();
-	  setTimeout(() => URL.revokeObjectURL(url), 2000);
+	  try {
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		a.rel = 'noopener';
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 4000);
+		return;
+	  } catch (err) {
+		console.warn('Direct download failed, trying to open in new tab', err);
+	  }
+	  // Fallbacks for sandboxed embeds (e.g., Notion)
+	  const win = window.open(url, '_blank', 'noopener');
+	  if (!win) {
+		showDownloadNotice();
+	  }
+	  setTimeout(() => URL.revokeObjectURL(url), 8000);
+	};
+
+	const showDownloadNotice = () => {
+	  let el = document.getElementById('download-blocked');
+	  if (!el) {
+		el = document.createElement('div');
+		el.id = 'download-blocked';
+		el.style.position = 'fixed';
+		el.style.bottom = '16px';
+		el.style.left = '50%';
+		el.style.transform = 'translateX(-50%)';
+		el.style.background = '#111827';
+		el.style.color = '#e5e7eb';
+		el.style.padding = '10px 14px';
+		el.style.borderRadius = '12px';
+		el.style.boxShadow = '0 10px 25px rgba(0,0,0,0.35)';
+		el.style.zIndex = '9999';
+		el.style.fontSize = '12px';
+		el.innerHTML = "Downloads are blocked in this embed. <a href='.' target='_blank' rel='noopener' style='color:#93c5fd;text-decoration:underline'>Open in new tab</a> and try again.";
+		document.body.appendChild(el);
+		setTimeout(() => { try { el.remove(); } catch {} }, 8000);
+	  }
 	};
 
 	downloadAllBtn.addEventListener('click', async () => {

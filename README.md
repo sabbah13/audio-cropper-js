@@ -2,6 +2,8 @@
 
 Minimal in-browser audio clipper: upload, select clips visually, play/pause/stop, and export each clip as MP3 or all clips as a ZIP. Built with Canvas + Web Audio API.
 
+![Preview of Audio Cropper](assets/preview.png)
+
 ## Features
 - Create, move, and resize clips by dragging over the waveform
 - Global and per-clip play/pause with accurate playhead
