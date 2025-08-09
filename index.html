@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minimal Audio Cropper</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 antialiased">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold tracking-tight">Audio Cropper</h1>
+      <p class="text-sm text-neutral-400">Upload audio, drag to create clips, then play them.</p>
+    </header>
+
+    <!-- Controls -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 mb-4">
+      <label class="inline-flex items-center gap-3">
+        <input id="fileInput" type="file" accept="audio/*"
+               class="block w-full text-sm file:mr-4 file:py-2 file:px-3 file:rounded-xl
+                      file:border-0 file:text-sm file:font-medium file:bg-neutral-800
+                      file:text-neutral-100 hover:file:bg-neutral-700 cursor-pointer"/>
+      </label>
+
+      <div class="flex gap-2">
+        <button id="playPauseBtn"
+                class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-sm disabled:opacity-40"
+                disabled>Play</button>
+        <button id="stopBtn"
+                class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-sm disabled:opacity-40"
+                disabled>Stop</button>
+        <button id="clearClipsBtn"
+                class="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-sm disabled:opacity-40"
+                disabled>Clear Clips</button>
+      </div>
+    </div>
+
+    <!-- Waveform -->
+    <div id="waveWrap"
+         class="relative w-full h-48 rounded-2xl bg-neutral-900 ring-1 ring-neutral-800 overflow-hidden select-none">
+      <canvas id="waveCanvas" class="w-full h-full"></canvas>
+
+      <!-- Overlay hints -->
+      <div id="hint"
+           class="absolute top-2 right-2 text-[11px] text-neutral-400 bg-neutral-900/60 px-2 py-1 rounded-xl">
+        Drag on waveform to create a clip
+      </div>
+    </div>
+
+    <!-- Clip list -->
+    <section class="mt-6">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-medium">Clips</h2>
+        <span id="durationLabel" class="text-xs text-neutral-400">—</span>
+      </div>
+      <ul id="clipsList" class="grid gap-2"></ul>
+    </section>
+
+    <footer class="mt-8 text-center text-xs text-neutral-500">
+      Tip: drag inside a clip to move it, or drag its edges to resize.
+    </footer>
+  </div>
+</body>
+</html>
