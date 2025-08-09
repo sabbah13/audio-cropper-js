@@ -110,8 +110,8 @@
 		  ctx.fillRect(x1, 0, 2 * dpr, H);
 		  ctx.fillRect(x2 - 2 * dpr, 0, 2 * dpr, H);
   
-		  // label tag
-		  const label = `Clip ${clip.id}`;
+			// label tag
+			const label = `Clip ${clip.id} (${(clip.end - clip.start).toFixed(2)}s)`;
 		  ctx.font = `${12 * dpr}px ui-sans-serif, system-ui, -apple-system`;
 		  ctx.fillStyle = '#e5e7eb'; // neutral-200
 		  const tx = Math.min(x1 + 6 * dpr, W - 60 * dpr);
@@ -363,7 +363,8 @@
 		  label.textContent = `Clip ${clip.id}`;
 		  const times = document.createElement('span');
 		  times.className = 'text-neutral-400';
-		  times.textContent = `(${clip.start.toFixed(2)}s – ${clip.end.toFixed(2)}s)`;
+		  const dur = Math.max(0, clip.end - clip.start);
+		  times.textContent = `(${clip.start.toFixed(2)}s – ${clip.end.toFixed(2)}s, ${dur.toFixed(2)}s)`;
 		  left.append(sw, label, times);
   
 		  const right = document.createElement('div');
