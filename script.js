@@ -295,18 +295,12 @@
 	  downloadAllBtn.disabled = true;
   
 	  resizeCanvas();
-
-	  // Try to parse input metadata (bitrate, channels, sampleRate)
-	  try {
-		await ensureMusicMetadata();
-		const mm = await window.musicMetadata.parseBlob(file);
-		const fmt = mm && mm.format ? mm.format : {};
-		const channels = (typeof fmt.numberOfChannels === 'number' && fmt.numberOfChannels > 0) ? Math.min(2, fmt.numberOfChannels) : Math.min(2, buffer.numberOfChannels || 2);
-		const sampleRate = (typeof fmt.sampleRate === 'number' && fmt.sampleRate > 0) ? fmt.sampleRate : buffer.sampleRate;
-		let bitrateKbps = null;
-		if (typeof fmt.bitrate === 'number' && fmt.bitrate > 0) bitrateKbps = Math.round(fmt.bitrate / 1000);
-		state.inputFormat = { channels, sampleRate, bitrateKbps };
-	  } catch {}
+  // Populate format from decoded buffer only (avoid loading external parsers in embeds)
+  state.inputFormat = {
+    channels: Math.min(2, buffer.numberOfChannels || 2),
+    sampleRate: buffer.sampleRate,
+    bitrateKbps: null,
+  };
 	});
   
 	// Top-level controls
