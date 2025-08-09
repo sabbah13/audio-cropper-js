@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Minimal Audio Cropper</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
 </head>
 <body class="bg-neutral-950 text-neutral-100 antialiased">
   <div class="max-w-4xl mx-auto px-4 py-8">
@@ -52,7 +52,12 @@
     <section class="mt-6">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-medium">Clips</h2>
-        <span id="durationLabel" class="text-xs text-neutral-400">—</span>
+        <div class="flex items-center gap-2">
+          <span id="durationLabel" class="text-xs text-neutral-400">—</span>
+          <button id="downloadAllBtn"
+                  class="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs disabled:opacity-40"
+                  disabled>Download All</button>
+        </div>
       </div>
       <ul id="clipsList" class="grid gap-2"></ul>
     </section>
@@ -61,5 +66,6 @@
       Tip: drag inside a clip to move it, or drag its edges to resize.
     </footer>
   </div>
+  <script src="./script.js" defer></script>
 </body>
 </html>
