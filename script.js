@@ -53,6 +53,8 @@
 	  draw();
 	};
 	window.addEventListener('resize', resizeCanvas);
+  // Re-render list on resize so responsive colon markers update
+  window.addEventListener('resize', () => { try { renderClipsList(); } catch {} });
   
 	// Draw waveform + clips
 	const draw = () => {
@@ -111,7 +113,7 @@
 		  ctx.fillRect(x2 - 2 * dpr, 0, 2 * dpr, H);
   
 			// label tag
-			const label = `Clip ${clip.id} (${(clip.end - clip.start).toFixed(2)}s)`;
+			const label = `Clip ${String((() => { try { return getClipNumber(clip); } catch { return clip.id; } })()).padStart(2, '0')} (${(clip.end - clip.start).toFixed(2)}s)`;
 		  ctx.font = `${12 * dpr}px ui-sans-serif, system-ui, -apple-system`;
 		  ctx.fillStyle = '#e5e7eb'; // neutral-200
 		  const tx = Math.min(x1 + 6 * dpr, W - 60 * dpr);
@@ -344,7 +346,7 @@
 	  state.clips
 		.slice()
 		.sort((a, b) => a.start - b.start)
-		.forEach((clip) => {
+		.forEach((clip, idx) => {
 		  const li = document.createElement('li');
 		  li.className = 'flex items-center justify-between gap-3 bg-neutral-900 ring-1 ring-neutral-800 rounded-2xl px-3 py-2';
   
@@ -354,11 +356,14 @@
 		  sw.className = 'inline-block w-3 h-3 rounded-full';
 		  sw.style.background = clip.color;
 		  const label = document.createElement('span');
-		  label.textContent = `Clip ${clip.id}`;
-		  const times = document.createElement('span');
-		  times.className = 'text-neutral-400';
-		  const dur = Math.max(0, clip.end - clip.start);
-		  times.textContent = `(${clip.start.toFixed(2)}s – ${clip.end.toFixed(2)}s, ${dur.toFixed(2)}s)`;
+		  label.textContent = `Clip ${String(idx + 1).padStart(2, '0')}`;
+      const times = document.createElement('span');
+      times.className = 'text-neutral-400';
+      const dur = Math.max(0, clip.end - clip.start);
+      const uiStart = secondsToUI(clip.start);
+      const uiEnd = secondsToUI(clip.end);
+      const markers = makeColonMarkers(dur);
+      times.textContent = `(${uiStart} – ${uiEnd}) ${markers} ${dur.toFixed(2)}s`;
 		  left.append(sw, label, times);
   
 		  const right = document.createElement('div');
@@ -388,7 +393,7 @@
 			  dlBtn.disabled = true;
 			  dlBtn.textContent = 'Preparing…';
 			  const blob = await exportClipToMp3(clip);
-			  const fname = `clip-${String(clip.id).padStart(2,'0')}-${clip.start.toFixed(2)}s-${clip.end.toFixed(2)}s.mp3`;
+			  const fname = makeClipFilename(clip);
 			  downloadBlob(blob, fname);
 			} catch (err) {
 			  console.error('Download failed', err);
@@ -718,6 +723,93 @@
 	  return encodeMp3({ channels: 2, sampleRate, pcm: { left: pcmSlice.left, right: pcmSlice.right } });
 	};
 
+	// Filename helpers
+	const pad2 = (n) => String(Math.max(0, Math.floor(n))).padStart(2, '0');
+
+	const secondsToHMS = (seconds) => {
+	  const total = Math.max(0, Math.floor(seconds || 0));
+	  let hours = Math.floor(total / 3600);
+	  const minutes = Math.floor((total % 3600) / 60);
+	  const secs = total % 60;
+	  if (hours > 99) hours = 99;
+	  return `${pad2(hours)}.${pad2(minutes)}.${pad2(secs)}`;
+	};
+
+  // For filenames: HH.MM.SS.mmm (milliseconds)
+  const secondsToHMSms = (seconds) => {
+    const totalMs = Math.max(0, Math.round((seconds || 0) * 1000));
+    let totalSec = Math.floor(totalMs / 1000);
+    const ms = totalMs % 1000;
+    let hours = Math.floor(totalSec / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    if (hours > 99) hours = 99;
+    return `${pad2(hours)}.${pad2(minutes)}.${pad2(secs)}.${String(ms).padStart(3, '0')}`;
+  };
+
+	const sanitizeBaseName = (name) => {
+	  let safe = String(name || '')
+		.replace(/[\\/:*?"<>|]/g, '_')
+		.replace(/\s+/g, ' ');
+	  safe = safe.replace(/^[ .]+|[ .]+$/g, '');
+	  return safe || 'audio';
+	};
+
+	const getOriginalBaseName = () => {
+	  const file = state.originalFile;
+	  if (!file || !file.name) return 'audio';
+	  const name = file.name;
+	  const idx = name.lastIndexOf('.');
+	  const base = idx > 0 ? name.slice(0, idx) : name;
+	  return sanitizeBaseName(base);
+	};
+
+	const compareClips = (a, b) => {
+	  if (a.start !== b.start) return a.start - b.start;
+	  if (a.end !== b.end) return a.end - b.end;
+	  const aid = (a && typeof a.id === 'number') ? a.id : 0;
+	  const bid = (b && typeof b.id === 'number') ? b.id : 0;
+	  return aid - bid;
+	};
+
+	const getOrderedClips = () => (state.clips || []).slice().sort(compareClips);
+
+	const getClipNumber = (clip) => {
+	  const ordered = getOrderedClips();
+	  const idx = ordered.findIndex((c) => c === clip || (typeof c.id !== 'undefined' && c.id === clip.id));
+	  return idx >= 0 ? idx + 1 : 1;
+	};
+
+	const makeClipFilename = (clip) => {
+	  const base = getOriginalBaseName();
+    const nn = pad2(getClipNumber(clip));
+    const start = secondsToHMSms(clip && typeof clip.start === 'number' ? clip.start : 0);
+    const end = secondsToHMSms(clip && typeof clip.end === 'number' ? clip.end : 0);
+    const duration = Math.max(0, (clip && typeof clip.start === 'number' && typeof clip.end === 'number') ? (clip.end - clip.start) : 0);
+    const durStr = duration.toFixed(2);
+    return `${base}---clip-${nn}-${start}-${end}-${durStr}.mp3`;
+	};
+
+  // UI time formatter: HH:MM:SS:CC (centiseconds)
+  const secondsToUI = (seconds) => {
+    const t = Math.max(0, Number(seconds) || 0);
+    const whole = Math.floor(t);
+    let hours = Math.floor(whole / 3600);
+    const minutes = Math.floor((whole % 3600) / 60);
+    const secs = whole % 60;
+    if (hours > 99) hours = 99;
+    const centi = Math.floor((t - whole) * 100);
+    return `${pad2(hours)}:${pad2(minutes)}:${pad2(secs)}:${pad2(centi)}`;
+  };
+
+  // Visual duration markers: one ':' per 15s, max 10. On small screens show 1.
+  const makeColonMarkers = (durationSec) => {
+    const full = Math.min(10, Math.floor(Math.max(0, durationSec) / 15));
+    const isWide = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width: 768px)').matches;
+    const count = isWide ? Math.max(1, full) : 1;
+    return new Array(count).fill(':').join(' ');
+  };
+
 	const downloadBlob = (blob, filename) => {
 	  const url = URL.createObjectURL(blob);
 	  try {
@@ -772,11 +864,12 @@
 		const zip = new window.JSZip();
 		for (const clip of state.clips) {
 		  const blob = await exportClipToMp3(clip);
-		  const fname = `clip-${String(clip.id).padStart(2,'0')}-${clip.start.toFixed(2)}s-${clip.end.toFixed(2)}s.mp3`;
+		  const fname = makeClipFilename(clip);
 		  zip.file(fname, blob);
 		}
 		const content = await zip.generateAsync({ type: 'blob' });
-		downloadBlob(content, 'clips.zip');
+		const archiveBase = getOriginalBaseName();
+		downloadBlob(content, `${archiveBase}---clips.zip`);
 	  } catch (err) {
 		console.error('Download all failed', err);
 	  } finally {

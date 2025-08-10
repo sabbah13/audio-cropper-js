@@ -12,6 +12,7 @@ Minimal, fast, and private in‑browser audio clipper. Upload any audio, mark cl
 - Single‑click seek anywhere on the waveform or inside a clip
 - Export each clip to MP3 (preserves channels up to stereo, sensible bitrate)
 - Download all clips at once as a ZIP archive
+ - Spec-compliant filenames and dynamic numbering
 - Runs entirely in your browser (no uploads, no accounts, no tracking)
 
 ## How to use
@@ -20,6 +21,19 @@ Minimal, fast, and private in‑browser audio clipper. Upload any audio, mark cl
 3. Drag inside a clip to move it, or drag its edges to resize.
 4. Use Play/Pause/Stop globally or per clip; the playhead shows the current position.
 5. Click “Download” on any clip to export it as MP3, or “Download All” to get a ZIP of all clips.
+
+### Filenames
+- Clips are named using the original file name and clip metadata:
+  `<Original Filename>---clip-<NN>-<HH.MM.SS.mmm>-<HH.MM.SS.mmm>-<DD.DD>.mp3`
+  - `NN`: clip number based on current ordering by start time (00-padded)
+  - `HH.MM.SS.mmm`: start and end times, zero‑padded, dots as separators
+  - `DD.DD`: duration in seconds with 2 decimals
+  - Example: `Kickback Trailer---clip-01-00.00.37.181-00.02.44.004-126.82.mp3`
+- ZIP archive name: `<Original Filename>---clips.zip`.
+
+### UI time display
+- Start/end in the list show as `HH:MM:SS:CC` (centiseconds).
+- After the range, you’ll see colon markers representing duration: one colon per 15s, up to 10. On small screens only one colon is shown.
 
 ## Run locally
 This repo ships with a prebuilt Tailwind CSS file. You only need a static server.
